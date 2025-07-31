@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: task_management
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - task_network
+
+  # Keycloak for authentication
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: task-management-keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/task_management
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HTTP_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    command:
+      - start-dev
+    networks:
+      - task_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres
+      - DATABASE_NAME=task_management
+      - JWT_SECRET=your-secret-key-here
+      - JWT_EXPIRES_IN=24h
+      - PORT=3001
+      - NODE_ENV=production
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=task-management
+      - KEYCLOAK_CLIENT_ID=task-management-backend
+      - KEYCLOAK_CLIENT_SECRET=your-keycloak-client-secret
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - keycloak
+    networks:
+      - task_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+      - NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080
+      - NEXT_PUBLIC_KEYCLOAK_REALM=task-management
+      - NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=task-management-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+      - keycloak
+    networks:
+      - task_network
+
+volumes:
+  postgres_data:
+
+networks:
+  task_network:
+    driver: bridge

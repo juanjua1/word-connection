@@ -1,0 +1,32 @@
+{
+  "name": "task-manager-workspace",
+  "version": "1.0.0",
+  "description": "Sistema completo de gestión de tareas",
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "build:all": "cd backend && npm run build && cd ../frontend && npm run build",
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "start:docker": "docker-compose up -d",
+    "stop:docker": "docker-compose down",
+    "db:up": "docker-compose up postgres -d",
+    "db:down": "docker-compose down postgres"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "task-management",
+    "nestjs",
+    "nextjs",
+    "postgresql",
+    "docker",
+    "typescript"
+  ],
+  "author": "Sistema de Gestión de Tareas",
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}

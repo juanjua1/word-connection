@@ -1,0 +1,164 @@
+<!-- Test de Analytics Dashboard -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Analytics API</title>
+</head>
+<body>
+    <h1>Test de Analytics API</h1>
+    
+    <div>
+        <h2>1. Login</h2>
+        <button onclick="login()">Login como Admin</button>
+        <div id="loginResult"></div>
+    </div>
+
+    <div>
+        <h2>2. Test Analytics Personal</h2>
+        <button onclick="testPersonalAnalytics()">Test Personal Analytics</button>
+        <div id="personalResult"></div>
+    </div>
+
+    <div>
+        <h2>3. Test Analytics Admin</h2>
+        <button onclick="testAdminAnalytics()">Test Admin Analytics</button>
+        <div id="adminResult"></div>
+    </div>
+
+    <div>
+        <h2>4. Test Admin Analytics con Team</h2>
+        <button onclick="testAdminAnalyticsWithTeam()">Test Admin Analytics con Team</button>
+        <div id="teamResult"></div>
+    </div>
+
+    <script>
+        let token = '';
+
+        async function login() {
+            try {
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@example.com',
+                        password: 'admin123'
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    token = result.token;
+                    document.getElementById('loginResult').innerHTML = '<p style="color: green;">Login exitoso!</p>';
+                } else {
+                    document.getElementById('loginResult').innerHTML = '<p style="color: red;">Error: ' + result.message + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+
+        async function testPersonalAnalytics() {
+            if (!token) {
+                alert('Primero debes hacer login');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3001/api/analytics/personal?timeframe=week', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    document.getElementById('personalResult').innerHTML = '<pre style="color: green;">' + JSON.stringify(result, null, 2) + '</pre>';
+                } else {
+                    document.getElementById('personalResult').innerHTML = '<p style="color: red;">Error: ' + JSON.stringify(result, null, 2) + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('personalResult').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+
+        async function testAdminAnalytics() {
+            if (!token) {
+                alert('Primero debes hacer login');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3001/api/analytics/admin?timeframe=week', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    document.getElementById('adminResult').innerHTML = '<pre style="color: green;">' + JSON.stringify(result, null, 2) + '</pre>';
+                } else {
+                    document.getElementById('adminResult').innerHTML = '<p style="color: red;">Error: ' + JSON.stringify(result, null, 2) + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('adminResult').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+
+        async function testAdminAnalyticsWithTeam() {
+            if (!token) {
+                alert('Primero debes hacer login');
+                return;
+            }
+
+            try {
+                // Primero obtener equipos
+                const teamsResponse = await fetch('http://localhost:3001/api/analytics/admin/teams', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const teams = await teamsResponse.json();
+                console.log('Teams:', teams);
+
+                if (teams.length > 0) {
+                    const firstTeam = teams[0];
+                    // Construir URL manualmente para probar el manejo de arrays
+                    const userIdsParam = firstTeam.userIds.map(id => `teamUserIds=${encodeURIComponent(id)}`).join('&');
+                    const url = `http://localhost:3001/api/analytics/admin?timeframe=week&${userIdsParam}`;
+                    
+                    console.log('URL:', url);
+
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    const result = await response.json();
+                    if (response.ok) {
+                        document.getElementById('teamResult').innerHTML = '<pre style="color: green;">' + JSON.stringify(result, null, 2) + '</pre>';
+                    } else {
+                        document.getElementById('teamResult').innerHTML = '<p style="color: red;">Error: ' + JSON.stringify(result, null, 2) + '</p>';
+                    }
+                } else {
+                    document.getElementById('teamResult').innerHTML = '<p style="color: orange;">No hay equipos disponibles</p>';
+                }
+            } catch (error) {
+                document.getElementById('teamResult').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
